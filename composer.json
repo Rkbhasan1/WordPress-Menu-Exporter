@@ -1,0 +1,6 @@
+{
+  "name": "ap/WordPress-Menu-Exporter",
+  "description": "Wordpress Menu Exporter",
+  "type": "wordpress-plugin",
+  "require": {}
+}
