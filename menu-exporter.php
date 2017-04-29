@@ -9,31 +9,31 @@
  * Author URI: http://humanmade.co.uk/
  *
  */
- 
+
 /**
  * Temporarily hacks the nav_menu_item post type to set builtin to false to it shows up under eport options.
- * 
+ *
  */
 function me_show_menu_post_type_in_export_options() {
-	
+
 	global $wp_post_types;
 	$wp_post_types['nav_menu_item']->_builtin = false;
-	
+
 }
 add_action( 'load-export.php', 'me_show_menu_post_type_in_export_options' );
 
 /**
  * The normal WordPress exporter API does not provide enough hooks etc, so we hijack the export page and run our own.
- * 
+ *
  */
 function me_catch_menu_export() {
-	
+
 	if( !isset( $_GET['download'] ) || empty( $_GET['content'] ) || $_GET['content'] !== 'nav_menu_item' )  {
 		return;
 	}
-	
+
 	me_export_wp();
-			
+
 }
 add_action( 'load-export.php', 'me_catch_menu_export' );
 
@@ -66,7 +66,7 @@ function me_export_wp( $args = array() ) {
 	 *
 	 * @param string $str String to wrap in XML CDATA tag.
 	 */
-	function wxr_cdata( $str ) {
+	function me_wxr_cdata( $str ) {
 		if ( seems_utf8( $str ) == false )
 			$str = utf8_encode( $str );
 
@@ -83,7 +83,7 @@ function me_export_wp( $args = array() ) {
 	 *
 	 * @return string Site URL.
 	 */
-	function wxr_site_url() {
+	function me_wxr_site_url() {
 		// ms: the base url
 		if ( is_multisite() )
 			return network_home_url();
@@ -99,11 +99,11 @@ function me_export_wp( $args = array() ) {
 	 *
 	 * @param object $term Term Object
 	 */
-	function wxr_term_name( $term ) {
+	function me_wxr_term_name( $term ) {
 		if ( empty( $term->name ) )
 			return;
 
-		echo '<wp:term_name>' . wxr_cdata( $term->name ) . '</wp:term_name>';
+		echo '<wp:term_name>' . me_wxr_cdata( $term->name ) . '</wp:term_name>';
 	}
 
 	/**
@@ -111,36 +111,36 @@ function me_export_wp( $args = array() ) {
 	 *
 	 * @since 3.1.0
 	 */
-	function wxr_nav_menu_terms() {
+	function me_wxr_nav_menu_terms() {
 		$nav_menus = wp_get_nav_menus();
 		if ( empty( $nav_menus ) || ! is_array( $nav_menus ) )
 			return;
 
 		foreach ( $nav_menus as $menu ) {
 			echo "\t<wp:term><wp:term_id>{$menu->term_id}</wp:term_id><wp:term_taxonomy>nav_menu</wp:term_taxonomy><wp:term_slug>{$menu->slug}</wp:term_slug>";
-			wxr_term_name( $menu );
+			me_wxr_term_name( $menu );
 			echo "</wp:term>\n";
 		}
 	}
-	
+
 	function me_wxr_nav_menu_item_terms_and_posts( &$post_ids ) {
-		
+
 		$posts_to_add = array();
-		
+
 		foreach( $post_ids as $post_id ) {
-			
+
 			if( ($type = get_post_meta( $post_id, '_menu_item_type', true ) ) == 'taxonomy' ) {
 				$term = get_term( get_post_meta( $post_id, '_menu_item_object_id', true ), ($tax = get_post_meta( $post_id, '_menu_item_object', true )) );
-				
+
 				echo "\t<wp:term><wp:term_id>{$term->term_id}</wp:term_id><wp:term_taxonomy>{$tax}</wp:term_taxonomy><wp:term_slug>{$term->slug}</wp:term_slug>";
-				wxr_term_name( $term );
+				me_wxr_term_name( $term );
 				echo "</wp:term>\n";
 			} elseif( $type == 'post_type' && in_array( get_post_meta( $post_id, '_menu_item_object', true ), array( 'post', 'page' ) ) ) {
 
 				$posts_to_add[] = get_post_meta( $post_id, '_menu_item_object_id', true );
 			}
-			
-			
+
+
 		}
 		$post_ids = array_merge( $posts_to_add, $post_ids );
 	}
@@ -150,7 +150,7 @@ function me_export_wp( $args = array() ) {
 	 *
 	 * @since 2.3.0
 	 */
-	function wxr_post_taxonomy() {
+	function me_wxr_post_taxonomy() {
 		global $post;
 
 		$taxonomies = get_object_taxonomies( $post->post_type );
@@ -159,7 +159,7 @@ function me_export_wp( $args = array() ) {
 		$terms = wp_get_object_terms( $post->ID, $taxonomies );
 
 		foreach ( (array) $terms as $term ) {
-			echo "\t\t<category domain=\"{$term->taxonomy}\" nicename=\"{$term->slug}\">" . wxr_cdata( $term->name ) . "</category>\n";
+			echo "\t\t<category domain=\"{$term->taxonomy}\" nicename=\"{$term->slug}\">" . me_wxr_cdata( $term->name ) . "</category>\n";
 		}
 	}
 
@@ -199,10 +199,10 @@ function me_export_wp( $args = array() ) {
 	<pubDate><?php echo date( 'D, d M Y H:i:s +0000' ); ?></pubDate>
 	<language><?php echo get_option( 'rss_language' ); ?></language>
 	<wp:wxr_version><?php echo '1.1'; ?></wp:wxr_version>
-	<wp:base_site_url><?php echo wxr_site_url(); ?></wp:base_site_url>
+	<wp:base_site_url><?php echo me_wxr_site_url(); ?></wp:base_site_url>
 	<wp:base_blog_url><?php bloginfo_rss( 'url' ); ?></wp:base_blog_url>
 
-<?php wxr_nav_menu_terms(); ?>
+<?php me_wxr_nav_menu_terms(); ?>
 <?php me_wxr_nav_menu_item_terms_and_posts( $post_ids ) ?>
 
 	<?php do_action( 'rss2_head' ); ?>
@@ -228,8 +228,8 @@ function me_export_wp( $args = array() ) {
 		<dc:creator><?php echo get_the_author_meta( 'login' ); ?></dc:creator>
 		<guid isPermaLink="false"><?php esc_url( the_guid() ); ?></guid>
 		<description></description>
-		<content:encoded><?php echo wxr_cdata( apply_filters( 'the_content_export', $post->post_content ) ); ?></content:encoded>
-		<excerpt:encoded><?php echo wxr_cdata( apply_filters( 'the_excerpt_export', $post->post_excerpt ) ); ?></excerpt:encoded>
+		<content:encoded><?php echo me_wxr_cdata( apply_filters( 'the_content_export', $post->post_content ) ); ?></content:encoded>
+		<excerpt:encoded><?php echo me_wxr_cdata( apply_filters( 'the_excerpt_export', $post->post_excerpt ) ); ?></excerpt:encoded>
 		<wp:post_id><?php echo $post->ID; ?></wp:post_id>
 		<wp:post_date><?php echo $post->post_date; ?></wp:post_date>
 		<wp:post_date_gmt><?php echo $post->post_date_gmt; ?></wp:post_date_gmt>
@@ -245,25 +245,25 @@ function me_export_wp( $args = array() ) {
 <?php	if ( $post->post_type == 'attachment' ) : ?>
 		<wp:attachment_url><?php echo wp_get_attachment_url( $post->ID ); ?></wp:attachment_url>
 <?php 	endif; ?>
-<?php 	wxr_post_taxonomy(); ?>
+<?php 	me_wxr_post_taxonomy(); ?>
 <?php	$postmeta = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM $wpdb->postmeta WHERE post_id = %d", $post->ID ) );
 		if ( $postmeta ) : foreach( $postmeta as $meta ) : if ( $meta->meta_key != '_edit_lock' ) : ?>
 		<wp:postmeta>
 			<wp:meta_key><?php echo $meta->meta_key; ?></wp:meta_key>
-			<wp:meta_value><?php echo wxr_cdata( $meta->meta_value ); ?></wp:meta_value>
+			<wp:meta_value><?php echo me_wxr_cdata( $meta->meta_value ); ?></wp:meta_value>
 		</wp:postmeta>
 <?php	endif; endforeach; endif; ?>
 <?php	$comments = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM $wpdb->comments WHERE comment_post_ID = %d AND comment_approved <> 'spam'", $post->ID ) );
 		if ( $comments ) : foreach ( $comments as $c ) : ?>
 		<wp:comment>
 			<wp:comment_id><?php echo $c->comment_ID; ?></wp:comment_id>
-			<wp:comment_author><?php echo wxr_cdata( $c->comment_author ); ?></wp:comment_author>
+			<wp:comment_author><?php echo me_wxr_cdata( $c->comment_author ); ?></wp:comment_author>
 			<wp:comment_author_email><?php echo $c->comment_author_email; ?></wp:comment_author_email>
 			<wp:comment_author_url><?php echo esc_url_raw( $c->comment_author_url ); ?></wp:comment_author_url>
 			<wp:comment_author_IP><?php echo $c->comment_author_IP; ?></wp:comment_author_IP>
 			<wp:comment_date><?php echo $c->comment_date; ?></wp:comment_date>
 			<wp:comment_date_gmt><?php echo $c->comment_date_gmt; ?></wp:comment_date_gmt>
-			<wp:comment_content><?php echo wxr_cdata( $c->comment_content ) ?></wp:comment_content>
+			<wp:comment_content><?php echo me_wxr_cdata( $c->comment_content ) ?></wp:comment_content>
 			<wp:comment_approved><?php echo $c->comment_approved; ?></wp:comment_approved>
 			<wp:comment_type><?php echo $c->comment_type; ?></wp:comment_type>
 			<wp:comment_parent><?php echo $c->comment_parent; ?></wp:comment_parent>
