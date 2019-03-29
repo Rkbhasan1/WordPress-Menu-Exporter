@@ -278,4 +278,5 @@ function me_export_wp( $args = array() ) {
 </channel>
 </rss>
 <?php
+    die();
 }
