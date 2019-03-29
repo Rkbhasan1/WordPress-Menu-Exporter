@@ -4,7 +4,7 @@
  * Plugin Name: Menu Exporter
  * Plugin URI: http://humanmade.co.uk
  * Description: Lets you only export your WordPress menus
- * Version: 1.0a
+ * Version: 1.0b
  * Author: Joe Hoyle - Human Made Limited
  * Author URI: http://humanmade.co.uk/
  *
